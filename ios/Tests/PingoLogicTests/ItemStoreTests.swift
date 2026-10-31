@@ -94,8 +94,77 @@ final class ItemStoreTests: XCTestCase {
         XCTAssertNil(store.resolve(WidgetSelection()))
         store.save(notes(["a", "b"]))
         XCTAssertEqual(store.resolve(WidgetSelection(itemID: "b"))?.id, "b")
-        XCTAssertEqual(store.resolve(WidgetSelection(itemID: "gone"))?.id, "a")
+        XCTAssertNil(store.resolve(WidgetSelection(itemID: "gone")))
         XCTAssertEqual(store.resolve(WidgetSelection())?.id, "a")
+    }
+
+    func testResolveOfDeletedItemIsNilEvenWithOtherItemsLeft() {
+        let store = makeStore()
+        store.save(notes(["a", "b"]))
+        store.remove("a")
+        XCTAssertNil(store.resolve(WidgetSelection(itemID: "a")))
+        XCTAssertEqual(store.resolve(WidgetSelection())?.id, "b")
+    }
+
+    private func rawNotes(_ elements: [String]) -> Data {
+        Data(("[" + elements.joined(separator: ",") + "]").utf8)
+    }
+
+    private let goodNote = #"{"id":"a","text":"ok","updated":"2025-06-15T10:00:00Z"}"#
+    private let brokenNote = #"{"id":"bad","text":42}"#
+
+    func testOneBrokenElementDoesNotHideTheOthers() {
+        let store = makeStore()
+        Store.backend.set(rawNotes([goodNote, brokenNote]), for: "notes")
+        XCTAssertEqual(store.all.map(\.id), ["a"])
+        XCTAssertEqual(store.resolve(WidgetSelection())?.id, "a")
+    }
+
+    func testWritingAfterPartialDecodeKeepsTheRawBackup() {
+        let store = makeStore()
+        let raw = rawNotes([goodNote, brokenNote])
+        Store.backend.set(raw, for: "notes")
+        store.add(NoteItem(id: "n", text: "new"))
+        XCTAssertEqual(store.all.map(\.id), ["a", "n"])
+        XCTAssertEqual(Store.backend.data(for: store.backupKey), raw)
+    }
+
+    func testCleanWritesLeaveNoBackup() {
+        let store = makeStore()
+        store.save(notes(["a", "b"]))
+        store.add(NoteItem(id: "c"))
+        XCTAssertNil(Store.backend.data(for: store.backupKey))
+    }
+
+    func testCorruptBlobIsBackedUpBeforeOverwrite() {
+        let store = makeStore()
+        let blob = Data("not json".utf8)
+        Store.backend.set(blob, for: "notes")
+        store.add(NoteItem(id: "a"))
+        XCTAssertEqual(Store.backend.data(for: store.backupKey), blob)
+        XCTAssertEqual(store.all.map(\.id), ["a"])
+    }
+
+    func testTolerantDecodingReportsCompleteness() {
+        let clean = TolerantDecoding.decode(NoteItem.self, from: rawNotes([goodNote]))
+        XCTAssertTrue(clean.isComplete)
+        XCTAssertEqual(clean.items.count, 1)
+        let partial = TolerantDecoding.decode(NoteItem.self, from: rawNotes([brokenNote, goodNote, "5", "null"]))
+        XCTAssertFalse(partial.isComplete)
+        XCTAssertEqual(partial.items.map(\.id), ["a"])
+        let notArray = TolerantDecoding.decode(NoteItem.self, from: Data(#"{"id":"a"}"#.utf8))
+        XCTAssertFalse(notArray.isComplete)
+        XCTAssertTrue(notArray.items.isEmpty)
+    }
+
+    func testBrokenSettingsAreBackedUpBeforeOverwrite() {
+        Store.backend = MemoryBackend()
+        let blob = Data(#"{"haptics":"yes"}"#.utf8)
+        Store.backend.set(blob, for: "settings")
+        XCTAssertFalse(Store.settings.seeded)
+        Store.setTheme(.leaf, for: .clock)
+        XCTAssertEqual(Store.backend.data(for: "settings.backup"), blob)
+        XCTAssertEqual(Store.settings.kindThemes["clock"], .leaf)
     }
 
     func testCorruptDataReadsAsEmpty() {

@@ -3,7 +3,7 @@ import SwiftUI
 extension PingoKind {
     @ViewBuilder
     func face(size: CardSize, date: Date, selection: WidgetSelection) -> some View {
-        faceContent(size: size, date: date, selection: selection)
+        faceBody(size: size, date: date, selection: selection)
             .environment(\.layoutDirection, .rightToLeft)
     }
 
@@ -29,15 +29,12 @@ extension PingoKind {
         return Route.item(ItemRoute(kind: library, id: id)).url
     }
 
-    private func resolvedItemID(_ selection: WidgetSelection) -> String? {
-        switch self {
-        case .note: Store.notes.resolve(selection)?.id
-        case .countdown: Store.countdowns.resolve(selection)?.id
-        case .habit: Store.habits.resolve(selection)?.id
-        case .todo: Store.todos.resolve(selection)?.id
-        case .counter: Store.counters.resolve(selection)?.id
-        case .photo: Store.albums.resolve(selection)?.id
-        default: nil
+    @ViewBuilder
+    private func faceBody(size: CardSize, date: Date, selection: WidgetSelection) -> some View {
+        if let notice = notice(selection: selection) {
+            FaceNotice(kind: notice, size: size, theme: self == .photo ? .ink : Store.theme(for: self, selection: selection))
+        } else {
+            faceContent(size: size, date: date, selection: selection)
         }
     }
 

@@ -17,10 +17,10 @@ enum Route: Hashable {
     private static let home = URL(string: "pingo://settings")!
 
     init?(url: URL) {
-        guard url.scheme == Self.scheme,
+        guard url.scheme?.lowercased() == Self.scheme,
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let host = components.host,
-              let parts = Self.segments(components.percentEncodedPath),
+              let host = components.host?.lowercased(),
+              let parts = Self.segments(Self.withoutTrailingSlash(components.percentEncodedPath)),
               let route = Self.route(host: host, parts: parts) else { return nil }
         self = route
     }
@@ -57,6 +57,10 @@ enum Route: Hashable {
         var allowed = CharacterSet.urlPathAllowed
         allowed.remove("/")
         return id.addingPercentEncoding(withAllowedCharacters: allowed) ?? id
+    }
+
+    private static func withoutTrailingSlash(_ path: String) -> String {
+        path.hasSuffix("/") ? String(path.dropLast()) : path
     }
 
     private static func segments(_ encodedPath: String) -> [String]? {

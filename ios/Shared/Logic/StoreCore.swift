@@ -73,6 +73,7 @@ enum Store {
     }
 
     static func prepare() {
+        guard !AppGroup.isUnreachableFromWidget else { return }
         var current = settings
         guard !current.seeded, LibraryKind.allCases.allSatisfy({ count(of: $0) == 0 }) else { return }
         notes.write([NoteItem(text: "امروز چه کاری از همه مهم‌تره؟")])
@@ -115,7 +116,14 @@ enum Store {
 
     private static func persist(_ value: AppSettings) {
         guard let data = try? JSONCoding.encoder().encode(value) else { return }
+        keepSettingsBackupIfUnreadable()
         backend.set(data, for: settingsKey)
+    }
+
+    private static func keepSettingsBackupIfUnreadable() {
+        guard let current = backend.data(for: settingsKey),
+              (try? JSONCoding.decoder().decode(AppSettings.self, from: current)) == nil else { return }
+        backend.set(current, for: settingsKey + ".backup")
     }
 
     private static func makeBackend() -> KeyValueBackend {

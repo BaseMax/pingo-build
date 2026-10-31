@@ -17,7 +17,7 @@ struct ReminderSection: View {
     }
 
     private var hint: some View {
-        Text(denied ? "اجازه اعلان داده نشده. از تنظیمات آیفون، بخش پینگو، اعلان‌ها رو روشن کن." : "یک روز و سه ساعت قبل از تموم شدن اعتبار نصب بهت خبر می‌دم.")
+        Text(denied ? "اجازه اعلان داده نشده. از تنظیمات آیفون، بخش پینگو، اعلان‌ها رو روشن کن." : ExpiryCopy.reminderHint)
             .dasto(13)
             .foregroundStyle(denied ? Color.red : Color.secondary)
             .lineSpacing(3)

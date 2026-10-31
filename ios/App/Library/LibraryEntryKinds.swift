@@ -58,7 +58,7 @@ extension CounterItem: LibraryEntry {
     var entryTheme: Theme? { theme }
 
     var entrySubtitle: String {
-        let shown = dailyReset ? count(on: .now) : total
+        let shown = shownCount(on: .now)
         let prefix = dailyReset ? "امروز " : ""
         return prefix + Persian.number(shown) + " از " + Persian.number(goal)
     }

@@ -3,7 +3,7 @@ import UserNotifications
 
 enum ReminderScheduler {
     static let identifierPrefix = "pingo.expiry"
-    static let message = "اعتبار پینگو داره تموم می‌شه. گوشی رو وصل کن و توی Xcode یک بار Run بزن."
+    static let message = ExpiryCopy.reminderBody
 
     static func refresh() async {
         let center = UNUserNotificationCenter.current()

@@ -109,4 +109,16 @@ final class BackupTests: XCTestCase {
         backup.restore { _, _ in }
         XCTAssertEqual(received, [nil])
     }
+
+    func testFutureVersionIsRejectedBeforeDecodingThePayload() {
+        let payload = Data(#"{"version":9,"notes":"a different shape","photos":7}"#.utf8)
+        XCTAssertThrowsError(try Backup.decoded(from: payload)) { error in
+            guard case BackupError.unsupportedVersion(let version) = error else { return XCTFail("\(error)") }
+            XCTAssertEqual(version, 9)
+        }
+    }
+
+    func testMissingVersionIsRejected() {
+        XCTAssertThrowsError(try Backup.decoded(from: Data(#"{"notes":[]}"#.utf8)))
+    }
 }

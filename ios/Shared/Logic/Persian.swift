@@ -6,6 +6,7 @@ enum Persian {
     static let calendar: Calendar = {
         var calendar = Calendar(identifier: .persian)
         calendar.locale = locale
+        calendar.timeZone = .autoupdatingCurrent
         calendar.firstWeekday = 7
         return calendar
     }()
@@ -13,6 +14,7 @@ enum Persian {
     static func format(_ date: Date, _ pattern: String) -> String {
         let formatter = DateFormatter()
         formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
         formatter.locale = locale
         formatter.dateFormat = pattern
         return formatter.string(from: date)

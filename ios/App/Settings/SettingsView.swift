@@ -8,6 +8,7 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 28) {
+                    GroupWarningCard()
                     InstallValidityCard(expiry: expiry, now: now).reveal(0)
                     ReminderSection().reveal(0.06)
                     AppearanceSection().reveal(0.12)

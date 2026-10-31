@@ -24,9 +24,11 @@ struct ItemStore<Item: Codable & Identifiable & Hashable> where Item.ID == Strin
         self.kind = kind
     }
 
+    var backupKey: String { key + ".backup" }
+
     var all: [Item] {
         guard let data = Store.backend.data(for: key) else { return [] }
-        return (try? JSONCoding.decoder().decode([Item].self, from: data)) ?? []
+        return TolerantDecoding.decode(Item.self, from: data).items
     }
 
     func item(_ id: String) -> Item? {
@@ -35,7 +37,8 @@ struct ItemStore<Item: Codable & Identifiable & Hashable> where Item.ID == Strin
 
     func resolve(_ selection: WidgetSelection) -> Item? {
         let items = all
-        return items.first { $0.id == selection.itemID } ?? items.first
+        guard let id = selection.itemID else { return items.first }
+        return items.first { $0.id == id }
     }
 
     func save(_ items: [Item]) {
@@ -45,7 +48,14 @@ struct ItemStore<Item: Codable & Identifiable & Hashable> where Item.ID == Strin
 
     func write(_ items: [Item]) {
         guard let data = try? JSONCoding.encoder().encode(items) else { return }
+        keepBackupIfPartial()
         Store.backend.set(data, for: key)
+    }
+
+    private func keepBackupIfPartial() {
+        guard let current = Store.backend.data(for: key),
+              !TolerantDecoding.decode(Item.self, from: current).isComplete else { return }
+        Store.backend.set(current, for: backupKey)
     }
 
     func add(_ item: Item) {
