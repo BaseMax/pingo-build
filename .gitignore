@@ -1,0 +1,8 @@
+*.xcodeproj
+xcuserdata/
+DerivedData/
+.DS_Store
+landing/downloads/
+ios/build/
+site/artifact.html
+ios/Config/

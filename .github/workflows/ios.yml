@@ -1,0 +1,64 @@
+name: ios
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      OUT: ${{ github.workspace }}/out
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode
+        run: |
+          latest="$(printf '%s\n' /Applications/Xcode_*.app | grep -vi 'beta' | sort -V | tail -1)"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+          swift --version
+          xcodebuild -showsdks
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Fetch font
+        env:
+          FONT_B64_1: ${{ secrets.FONT_B64_1 }}
+          FONT_B64_2: ${{ secrets.FONT_B64_2 }}
+        run: ./scripts/fetch-font.sh
+
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate --spec project.yml
+
+      - name: Build
+        run: ./scripts/build-app.sh "$OUT/derived" "$OUT/logs"
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: out/logs
+          if-no-files-found: ignore
+
+      - name: Sign and package
+        run: ./scripts/make-ipa.sh "$OUT/derived/Build/Products/Release-iphoneos" "$OUT/Pingo.ipa"
+
+      - name: Verify ipa
+        run: ./scripts/verify-ipa.sh "$OUT/Pingo.ipa"
+
+      - name: Upload ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pingo-ipa
+          path: out/Pingo.ipa
+          if-no-files-found: error

@@ -1,0 +1,98 @@
+name: Pingo
+
+options:
+  bundleIdPrefix: ir.dsto
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    PINGO_BUNDLE: ir.dsto.pingo
+    PINGO_GROUP: group.ir.dsto.pingo
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEBUG_INFORMATION_FORMAT: dwarf
+
+settingGroups:
+  phone:
+    TARGETED_DEVICE_FAMILY: "1"
+
+targets:
+  Pingo:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+    settings:
+      groups:
+        - phone
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(PINGO_BUNDLE)
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: Config/App.plist
+      properties:
+        CFBundleDisplayName: پینگو
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIAppFonts:
+          - DastoYekan.ttf
+        PingoGroup: $(PINGO_GROUP)
+        CFBundleURLTypes:
+          - CFBundleURLName: ir.dsto.pingo
+            CFBundleURLSchemes:
+              - pingo
+    entitlements:
+      path: Config/App.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(PINGO_GROUP)
+    dependencies:
+      - target: PingoWidgets
+
+  PingoWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widgets
+      - Shared
+    settings:
+      groups:
+        - phone
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(PINGO_BUNDLE).widgets
+    info:
+      path: Config/Widgets.plist
+      properties:
+        CFBundleDisplayName: پینگو
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        UIAppFonts:
+          - DastoYekan.ttf
+        PingoGroup: $(PINGO_GROUP)
+    entitlements:
+      path: Config/Widgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(PINGO_GROUP)
+
+schemes:
+  Pingo:
+    build:
+      targets:
+        Pingo: all
+        PingoWidgets: all
+    run:
+      config: Release
+    archive:
+      config: Release
