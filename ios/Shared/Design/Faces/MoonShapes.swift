@@ -9,7 +9,7 @@ struct MoonLit: Shape {
         let center = CGPoint(x: rect.midX, y: rect.midY)
         let radius = min(rect.width, rect.height) / 2
         let waxing = fraction < 0.5
-        let curve = cos(2 * .pi * (waxing ? fraction : 1 - fraction))
+        let curve: Double = cos(2 * Double.pi * (waxing ? fraction : 1 - fraction))
         var path = limb(center: center, radius: radius)
         terminator(into: &path, center: center, radius: radius, curve: curve)
         path.closeSubpath()
@@ -21,7 +21,8 @@ struct MoonLit: Shape {
         var path = Path()
         for step in 0...Self.steps {
             let angle = -Double.pi / 2 + Double.pi * Double(step) / Double(Self.steps)
-            let point = CGPoint(x: center.x + radius * cos(angle), y: center.y + radius * sin(angle))
+            let unit = Self.unit(angle)
+            let point = CGPoint(x: center.x + radius * unit.x, y: center.y + radius * unit.y)
             if step == 0 {
                 path.move(to: point)
             } else {
@@ -34,8 +35,15 @@ struct MoonLit: Shape {
     private func terminator(into path: inout Path, center: CGPoint, radius: CGFloat, curve: Double) {
         for step in 0...Self.steps {
             let angle = Double.pi / 2 - Double.pi * Double(step) / Double(Self.steps)
-            path.addLine(to: CGPoint(x: center.x + radius * curve * cos(angle), y: center.y + radius * sin(angle)))
+            let unit = Self.unit(angle)
+            path.addLine(to: CGPoint(x: center.x + radius * CGFloat(curve) * unit.x, y: center.y + radius * unit.y))
         }
+    }
+
+    private static func unit(_ angle: Double) -> (x: CGFloat, y: CGFloat) {
+        let horizontal: Double = cos(angle)
+        let vertical: Double = sin(angle)
+        return (CGFloat(horizontal), CGFloat(vertical))
     }
 }
 

@@ -45,7 +45,7 @@ build_modules() {
   rm -f "$staging.tar" "$staging.log"
   tar c -C "$tc" stubs | docker run $limits -e ORDER="$order" "$image" bash -c "$stub_script" > "$staging.tar" 2> "$staging.log"
   if [ -s "$staging.log" ]; then
-    sed 's#^\[\([A-Za-z]*\)\] #\1 stub: #' "$staging.log" | sort -u | head -80
+    sed 's#^\[\([A-Za-z]*\)\] #\1 stub: #' "$staging.log" | sort -u
     echo "stub modules have diagnostics, see $staging.log" >&2
   fi
   if grep -q "error:\|not produced" "$staging.log"; then return 1; fi

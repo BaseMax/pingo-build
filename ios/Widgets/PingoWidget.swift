@@ -37,25 +37,28 @@ struct PingoProvider<Config: WidgetConfigurationIntent & SelectionProviding>: Ap
     }
 }
 
-struct PingoWidget<Config: WidgetConfigurationIntent & SelectionProviding>: Widget {
-    let kind: PingoKind
+protocol WidgetSpec {
+    associatedtype Config: WidgetConfigurationIntent & SelectionProviding
+    static var kind: PingoKind { get }
+}
 
+struct PingoWidget<Spec: WidgetSpec>: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(
-            kind: kind.rawValue,
-            intent: Config.self,
-            provider: PingoProvider<Config>(kind: kind)
+            kind: Spec.kind.rawValue,
+            intent: Spec.Config.self,
+            provider: PingoProvider<Spec.Config>(kind: Spec.kind)
         ) { entry in
-            PingoWidgetView(kind: kind, entry: entry)
+            PingoWidgetView(kind: Spec.kind, entry: entry)
         }
-        .configurationDisplayName(kind.title)
-        .description(kind.about)
+        .configurationDisplayName(Spec.kind.title)
+        .description(Spec.kind.about)
         .supportedFamilies(families)
         .contentMarginsDisabled()
     }
 
     private var families: [WidgetFamily] {
-        kind.sizes.map(\.family) + kind.accessories.map(\.family)
+        Spec.kind.sizes.map(\.family) + Spec.kind.accessories.map(\.family)
     }
 }
 

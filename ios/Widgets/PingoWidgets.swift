@@ -11,23 +11,23 @@ struct PingoWidgets: WidgetBundle {
     }
 
     @WidgetBundleBuilder private var timeWidgets: some Widget {
-        PingoWidget<ThemeConfigIntent>(kind: .date)
-        PingoWidget<ThemeConfigIntent>(kind: .clock)
-        PingoWidget<ThemeConfigIntent>(kind: .progress)
-        PingoWidget<CountdownConfigIntent>(kind: .countdown)
-        PingoWidget<ThemeConfigIntent>(kind: .moon)
+        PingoWidget<DateSpec>()
+        PingoWidget<ClockSpec>()
+        PingoWidget<ProgressSpec>()
+        PingoWidget<CountdownSpec>()
+        PingoWidget<MoonSpec>()
     }
 
     @WidgetBundleBuilder private var taskWidgets: some Widget {
-        PingoWidget<NoteConfigIntent>(kind: .note)
-        PingoWidget<TodoConfigIntent>(kind: .todo)
-        PingoWidget<HabitConfigIntent>(kind: .habit)
-        PingoWidget<CounterConfigIntent>(kind: .counter)
+        PingoWidget<NoteSpec>()
+        PingoWidget<TodoSpec>()
+        PingoWidget<HabitSpec>()
+        PingoWidget<CounterSpec>()
     }
 
     @WidgetBundleBuilder private var inspireWidgets: some Widget {
-        PingoWidget<AlbumConfigIntent>(kind: .photo)
-        PingoWidget<ThemeConfigIntent>(kind: .fal)
+        PingoWidget<PhotoSpec>()
+        PingoWidget<FalSpec>()
     }
 
     @WidgetBundleBuilder private var controls: some Widget {
