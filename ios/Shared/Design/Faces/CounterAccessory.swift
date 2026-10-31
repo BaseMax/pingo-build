@@ -8,10 +8,10 @@ struct CounterAccessory: View {
     var body: some View {
         ZStack {
             AccessoryWidgetBackground()
-            Gauge(value: item?.progress(on: date) ?? 0) {
+            Gauge(value: item?.shownProgress(on: date) ?? 0) {
                 Image(systemName: item?.symbol ?? "plus.circle.fill")
             } currentValueLabel: {
-                Text(Persian.number(item?.count(on: date) ?? 0))
+                Text(Persian.number(item?.shownCount(on: date) ?? 0))
             }
             .gaugeStyle(.accessoryCircular)
             .faceAccent()

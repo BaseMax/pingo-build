@@ -25,6 +25,7 @@ enum AppTab: String, CaseIterable, Identifiable {
 struct LiquidDock: View {
     @Binding private var selection: AppTab
     @Namespace private var space
+    @Environment(\.colorScheme) private var colorScheme
 
     init(selection: Binding<AppTab>) {
         self._selection = selection
@@ -45,6 +46,10 @@ struct LiquidDock: View {
         .padding(.horizontal, Layout.gutter)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+    }
+
+    private var selectedColor: Color {
+        colorScheme == .dark ? Color.signal : Color(hex: 0xA33800)
     }
 
     private var track: some View {
@@ -73,7 +78,7 @@ struct LiquidDock: View {
                         .transition(.blurFade)
                 }
             }
-            .foregroundStyle(isSelected ? Color.signal : Color.secondary)
+            .foregroundStyle(isSelected ? selectedColor : Color.secondary)
             .padding(.horizontal, 16)
             .frame(minWidth: 56, minHeight: 48)
             .contentShape(Capsule())

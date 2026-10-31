@@ -37,7 +37,10 @@ struct LibrarySection<Item: LibraryEntry>: View {
 
     private func duplicate(_ item: Item) {
         Haptics.success()
-        withAnimation(.liquid) { live.add(item.duplicated()) }
+        Task {
+            let copy = await item.duplicatedInBackground()
+            withAnimation(.liquid) { live.add(copy) }
+        }
     }
 
     private func remove(_ item: Item) {

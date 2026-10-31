@@ -5,6 +5,11 @@ enum PhotoStore {
     static let storedSide: CGFloat = 1000
     private static let quality: CGFloat = 0.85
     private static let thumbnails = NSCache<NSString, UIImage>()
+    private static let displays: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 4
+        return cache
+    }()
 
     private static var directory: URL {
         AppGroup.container.appendingPathComponent("photos", isDirectory: true)
@@ -23,7 +28,7 @@ enum PhotoStore {
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try data.write(to: url(for: name), options: .atomic)
-            thumbnails.removeAllObjects()
+            clearCaches()
             return true
         } catch {
             return false
@@ -34,6 +39,14 @@ enum PhotoStore {
         guard let source = CGImageSourceCreateWithURL(url(for: name) as CFURL, nil),
               let image = downsample(source, maxSide: maxSide) else { return nil }
         return UIImage(cgImage: image)
+    }
+
+    static func displayImage(named name: String, maxSide: CGFloat) -> UIImage? {
+        let key = "\(name)@\(Int(maxSide))" as NSString
+        if let cached = displays.object(forKey: key) { return cached }
+        guard let image = image(named: name, maxSide: maxSide) else { return nil }
+        displays.setObject(image, forKey: key)
+        return image
     }
 
     static func thumbnail(named name: String, side: CGFloat) -> UIImage? {
@@ -54,7 +67,12 @@ enum PhotoStore {
 
     static func remove(_ name: String) {
         try? FileManager.default.removeItem(at: url(for: name))
+        clearCaches()
+    }
+
+    private static func clearCaches() {
         thumbnails.removeAllObjects()
+        displays.removeAllObjects()
     }
 
     private static func url(for name: String) -> URL {

@@ -8,11 +8,15 @@ extension AlbumItem: LibraryEntry {
         photos.isEmpty ? "هنوز عکسی نداره" : Persian.number(photos.count) + " عکس"
     }
 
-    mutating func markAsCopy() {
-        title = title.asCopyName
-        photos = photos.compactMap { name in
-            PhotoStore.data(named: name).flatMap { PhotoStore.save($0) }
-        }
+    func duplicatedInBackground() async -> AlbumItem {
+        var copy = self
+        copy.id = UUID().uuidString
+        copy.title = title.asCopyName
+        let names = photos
+        copy.photos = await Task.detached(priority: .userInitiated) {
+            names.compactMap(PhotoStore.copy)
+        }.value
+        return copy
     }
 
     func cleanUp() {

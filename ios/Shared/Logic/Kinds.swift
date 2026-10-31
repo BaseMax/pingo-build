@@ -218,7 +218,7 @@ enum PingoKind: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .date: [.circular, .rectangular, .inline]
         case .clock: [.circular]
-        case .progress: [.circular, .rectangular]
+        case .progress: [.circular, .rectangular, .inline]
         case .countdown: [.circular, .rectangular, .inline]
         case .moon: [.circular]
         case .habit: [.circular]
@@ -275,25 +275,27 @@ enum Refresh: Equatable {
     case minutely(count: Int)
     case slideshow(minutes: Int, count: Int)
 
-    func plan(from now: Date) -> TimelinePlan {
+    static let everyEntries = 12
+
+    func plan(from now: Date, calendar: Calendar = Persian.calendar) -> TimelinePlan {
         switch self {
         case .midnight:
-            let boundary = Persian.calendar.startOfDay(for: Persian.shift(now, days: 1))
+            let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) ?? now.addingTimeInterval(86400)
+            let boundary = calendar.startOfDay(for: tomorrow)
             return TimelinePlan(dates: [now, boundary], reload: boundary.addingTimeInterval(60))
         case .every(let minutes):
-            return TimelinePlan(dates: [now], reload: now.addingTimeInterval(Double(max(minutes, 1)) * 60))
+            let upcoming = SlotClock.boundaries(after: now, minutes: minutes, count: Self.everyEntries, calendar: calendar)
+            return TimelinePlan(dates: [now] + upcoming.dropLast(), reload: upcoming.last ?? now)
         case .minutely(let count):
-            return Self.steps(from: now, minutes: 1, count: count)
+            return Self.steps(from: now, minutes: 1, count: count, calendar: calendar)
         case .slideshow(let minutes, let count):
-            return Self.steps(from: now, minutes: minutes, count: count)
+            return Self.steps(from: now, minutes: minutes, count: count, calendar: calendar)
         }
     }
 
-    private static func steps(from now: Date, minutes: Int, count: Int) -> TimelinePlan {
-        let step = Double(max(minutes, 1)) * 60
-        let total = max(count, 1)
-        let start = Date(timeIntervalSince1970: (now.timeIntervalSince1970 / step).rounded(.down) * step)
-        let dates = (0..<total).map { start.addingTimeInterval(Double($0) * step) }
-        return TimelinePlan(dates: dates, reload: start.addingTimeInterval(Double(total) * step))
+    private static func steps(from now: Date, minutes: Int, count: Int, calendar: Calendar) -> TimelinePlan {
+        let start = SlotClock.start(of: now, minutes: minutes, calendar: calendar)
+        let upcoming = SlotClock.boundaries(after: start, minutes: minutes, count: max(count, 1), calendar: calendar)
+        return TimelinePlan(dates: [start] + upcoming.dropLast(), reload: upcoming.last ?? start)
     }
 }

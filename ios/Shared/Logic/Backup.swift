@@ -4,6 +4,10 @@ enum BackupError: Error {
     case unsupportedVersion(Int)
 }
 
+private struct BackupHeader: Decodable {
+    let version: Int
+}
+
 struct Backup: Codable {
     static let currentVersion = 1
 
@@ -43,9 +47,9 @@ struct Backup: Codable {
     }
 
     static func decoded(from data: Data) throws -> Backup {
-        let backup = try JSONCoding.decoder().decode(Backup.self, from: data)
-        guard backup.version <= currentVersion else { throw BackupError.unsupportedVersion(backup.version) }
-        return backup
+        let header = try JSONCoding.decoder().decode(BackupHeader.self, from: data)
+        guard header.version <= currentVersion else { throw BackupError.unsupportedVersion(header.version) }
+        return try JSONCoding.decoder().decode(Backup.self, from: data)
     }
 
     func restore(photoSaver: (String, Data) -> Void) {

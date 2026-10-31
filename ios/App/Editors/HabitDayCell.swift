@@ -22,6 +22,9 @@ struct HabitDayCell: View {
         .disabled(isFuture)
         .opacity(isFuture ? 0.3 : 1)
         .animation(.liquidStretch, value: done)
+        .accessibilityLabel("روز " + Persian.number(day))
+        .accessibilityValue(done ? "ثبت شده" : "ثبت نشده")
+        .accessibilityAddTraits(done ? .isSelected : [])
     }
 
     private var fill: some View {

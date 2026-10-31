@@ -3,11 +3,13 @@ import SwiftUI
 struct ResetSection: View {
     @State private var isConfirming = false
     @State private var didWipe = false
+    @State private var isWiping = false
 
     var body: some View {
         SettingsGroup("پاک‌سازی", symbol: "trash.fill") {
             VStack(spacing: 12) {
                 Button(role: .destructive) {
+                    Haptics.tap()
                     isConfirming = true
                 } label: {
                     HStack(spacing: 8) {
@@ -18,6 +20,7 @@ struct ResetSection: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(LiquidButtonStyle(prominent: true, tint: Color.red))
+                .disabled(isWiping)
                 if didWipe {
                     Text("همه‌چیز پاک شد. هر وقت خواستی از اول شروع کن.")
                         .dasto(14)
@@ -37,8 +40,12 @@ struct ResetSection: View {
     }
 
     private func wipe() {
-        DataWiper.wipeAll()
-        Haptics.warning()
-        withAnimation(.liquid) { didWipe = true }
+        isWiping = true
+        Task {
+            await DataWiper.wipeAll()
+            isWiping = false
+            Haptics.warning()
+            withAnimation(.liquid) { didWipe = true }
+        }
     }
 }

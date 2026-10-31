@@ -7,6 +7,8 @@ struct BackupSection: View {
     @State private var isImporting = false
     @State private var feedback: BackupFeedback?
 
+    private var isBusy: Bool { feedback?.isWorking == true }
+
     var body: some View {
         SettingsGroup("نسخه پشتیبان", symbol: "externaldrive.fill") {
             DataSummaryCard()
@@ -36,6 +38,7 @@ struct BackupSection: View {
                     }
                 }
             }
+            .disabled(isBusy)
             if let feedback {
                 BackupBanner(feedback: feedback).transition(.blurFade)
             }
@@ -46,11 +49,15 @@ struct BackupSection: View {
     }
 
     private func prepareExport() {
-        do {
-            document = JSONDocument(data: try BackupTransfer.exportData())
-            isExporting = true
-        } catch {
-            show(BackupFeedback.from(error))
+        begin(.exporting)
+        Task {
+            do {
+                document = JSONDocument(data: try await BackupTransfer.exportData())
+                withAnimation(.liquid) { feedback = nil }
+                isExporting = true
+            } catch {
+                show(BackupFeedback.from(error))
+            }
         }
     }
 
@@ -69,17 +76,24 @@ struct BackupSection: View {
     }
 
     private func restore(from url: URL) {
-        do {
-            try BackupTransfer.restore(from: url)
-            show(.restored(BackupTransfer.totalItems()))
-        } catch {
-            show(BackupFeedback.from(error))
+        begin(.restoring)
+        Task {
+            do {
+                try await BackupTransfer.restore(from: url)
+                show(.restored(BackupTransfer.totalItems()))
+            } catch {
+                show(BackupFeedback.from(error))
+            }
         }
     }
 
     private func report(_ error: Error) {
         guard (error as? CocoaError)?.code != .userCancelled else { return }
         show(BackupFeedback.from(error))
+    }
+
+    private func begin(_ value: BackupFeedback) {
+        withAnimation(.liquid) { feedback = value }
     }
 
     private func show(_ value: BackupFeedback) {

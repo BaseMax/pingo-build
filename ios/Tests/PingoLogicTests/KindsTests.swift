@@ -21,6 +21,10 @@ final class KindsTests: XCTestCase {
         XCTAssertEqual(Set(PingoKind.allCases.map(\.title)).count, 11)
     }
 
+    func testProgressOffersEveryAccessoryShape() {
+        XCTAssertEqual(PingoKind.progress.accessories, [.circular, .rectangular, .inline])
+    }
+
     func testAccessoriesOnlyForListedKinds() {
         for kind in PingoKind.allCases {
             XCTAssertEqual(!kind.accessories.isEmpty, accessoryKinds.contains(kind), kind.rawValue)

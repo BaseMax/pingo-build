@@ -30,8 +30,7 @@ struct KindCard: View {
     }
 
     private var preview: some View {
-        ScaledPreview(kind: kind, size: kind.galleryPreviewSize)
-            .matchedTransitionSource(id: kind, in: namespace)
+        ScaledPreview(kind: kind, size: kind.galleryPreviewSize, namespace: namespace)
     }
 
     private var labels: some View {
@@ -53,6 +52,7 @@ struct KindCard: View {
 private struct ScaledPreview: View {
     let kind: PingoKind
     let size: CardSize
+    let namespace: Namespace.ID
 
     private var ratio: CGFloat {
         size.points.width / size.points.height
@@ -60,10 +60,14 @@ private struct ScaledPreview: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let scale = proxy.size.width / size.points.width
             FacePreview(kind: kind, size: size)
                 .allowsHitTesting(false)
-                .scaleEffect(proxy.size.width / size.points.width)
+                .scaleEffect(scale)
                 .frame(width: proxy.size.width, height: proxy.size.height)
+                .matchedTransitionSource(id: kind, in: namespace) { source in
+                    source.clipShape(RoundedRectangle(cornerRadius: Layout.cardCorner * scale, style: .continuous))
+                }
         }
         .aspectRatio(ratio, contentMode: .fit)
     }

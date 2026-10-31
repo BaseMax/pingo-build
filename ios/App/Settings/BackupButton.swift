@@ -14,7 +14,7 @@ struct BackupButton: View {
     }
 
     var body: some View {
-        Button(action: action) {
+        Button(action: tapped) {
             HStack(spacing: 8) {
                 Image(systemName: symbol)
                     .font(.system(size: 15, weight: .semibold))
@@ -23,5 +23,10 @@ struct BackupButton: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(LiquidButtonStyle(prominent: prominent))
+    }
+
+    private func tapped() {
+        Haptics.tap()
+        action()
     }
 }

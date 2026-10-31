@@ -10,7 +10,7 @@ struct CounterSmall: View {
             CounterHeader(item: item, palette: palette)
             Spacer(minLength: 4)
             HStack(spacing: 0) {
-                CounterRing(fraction: item.progress(on: date), width: 8, color: palette.accent, track: palette.track) {
+                CounterRing(fraction: item.shownProgress(on: date), width: 8, color: palette.accent, track: palette.track) {
                     CounterCenter(item: item, date: date, palette: palette)
                 }
                 .frame(width: 80, height: 80)
@@ -29,7 +29,7 @@ struct CounterMedium: View {
 
     var body: some View {
         HStack(spacing: 18) {
-            CounterRing(fraction: item.progress(on: date), width: 11, color: palette.accent, track: palette.track) {
+            CounterRing(fraction: item.shownProgress(on: date), width: 11, color: palette.accent, track: palette.track) {
                 CounterGlyph(item: item, date: date, palette: palette)
             }
             .frame(width: 112, height: 112)
@@ -50,9 +50,9 @@ struct CounterMedium: View {
 
     private var total: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(Persian.number(item.count(on: date)))
+            Text(Persian.number(item.shownCount(on: date)))
                 .dasto(36)
-                .foregroundStyle(item.reachedGoal(on: date) ? palette.accent : palette.ink)
+                .foregroundStyle(item.reachedShownGoal(on: date) ? palette.accent : palette.ink)
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)

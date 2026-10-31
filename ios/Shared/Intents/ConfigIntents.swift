@@ -93,11 +93,10 @@ struct AlbumConfigIntent: WidgetConfigurationIntent, SelectionProviding {
     static let description = IntentDescription("آلبومی که توی قاب عکس نشون داده می‌شه رو انتخاب کن.")
 
     @Parameter(title: "آلبوم") var album: AlbumEntity?
-    @Parameter(title: "رنگ", default: .automatic) var theme: ThemeChoice
 
     init() {}
 
     var selection: WidgetSelection {
-        theme.selection(itemID: album?.id)
+        WidgetSelection(itemID: album?.id)
     }
 }

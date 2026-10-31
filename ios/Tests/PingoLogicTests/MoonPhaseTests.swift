@@ -2,91 +2,105 @@ import XCTest
 @testable import PingoLogic
 
 final class MoonPhaseTests: XCTestCase {
-    private let newMoon = Date(timeIntervalSince1970: MoonPhase.reference)
+    private let tolerance: TimeInterval = 120
 
-    private func phase(afterDays days: Double) -> MoonPhase {
-        MoonPhase(date: newMoon.addingTimeInterval(days * 86400))
+    private func computed(code: String, near date: Date) -> Date {
+        let offset = UsnoMoonEvents.offsets[code] ?? 0
+        let base = LunarEvents.approximateIndex(for: date)
+        return (-2...2).map { LunarEvents.date(k: base + Double($0) + offset) }.min { abs($0.timeIntervalSince(date)) < abs($1.timeIntervalSince(date)) } ?? date
     }
 
-    func testReferenceIsTheNewMoonOfJanuary2000() {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
-        let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: newMoon)
-        XCTAssertEqual(parts.year, 2000)
-        XCTAssertEqual(parts.month, 1)
-        XCTAssertEqual(parts.day, 6)
-        XCTAssertEqual(parts.hour, 18)
-        XCTAssertEqual(parts.minute, 14)
-    }
-
-    func testFractionStaysInUnitRange() {
-        for offset in stride(from: -4000.0, through: 4000.0, by: 7.3) {
-            let value = phase(afterDays: offset).fraction
-            XCTAssertTrue(value >= 0 && value < 1, "offset \(offset) gave \(value)")
+    func testEveryUsnoEventOf2026And2027IsWithinTwoMinutes() {
+        XCTAssertEqual(UsnoMoonEvents.all.count, 99)
+        for event in UsnoMoonEvents.all {
+            let expected = UsnoMoonEvents.date(event.utc)
+            let actual = computed(code: event.code, near: expected)
+            XCTAssertEqual(actual.timeIntervalSince(expected), 0, accuracy: tolerance, "\(event.code) \(event.utc)")
         }
     }
 
-    func testIlluminationStaysInUnitRange() {
-        for offset in stride(from: 0.0, through: 60.0, by: 0.5) {
-            let value = phase(afterDays: offset).illumination
-            XCTAssertTrue(value >= 0 && value <= 1)
+    func testFractionAtEventsIsTheQuarterPosition() {
+        for event in UsnoMoonEvents.all {
+            let at = computed(code: event.code, near: UsnoMoonEvents.date(event.utc))
+            let wanted = UsnoMoonEvents.offsets[event.code] ?? 0
+            let value = MoonPhase(date: at.addingTimeInterval(1)).fraction
+            let distance = min(abs(value - wanted), 1 - abs(value - wanted))
+            XCTAssertLessThan(distance, 0.001, "\(event.code) \(event.utc)")
         }
     }
 
-    func testNewMoon() {
-        let moon = phase(afterDays: 0)
-        XCTAssertEqual(moon.fraction, 0, accuracy: 1e-9)
-        XCTAssertEqual(moon.illumination, 0, accuracy: 1e-9)
-        XCTAssertEqual(moon.name, "ماه نو")
-        XCTAssertEqual(moon.age, 0)
-    }
-
-    func testFullMoonFourteenPointSevenSixFiveDaysLater() {
-        let moon = phase(afterDays: 14.765)
-        XCTAssertEqual(moon.fraction, 0.5, accuracy: 0.001)
-        XCTAssertEqual(moon.illumination, 1, accuracy: 0.001)
-        XCTAssertEqual(moon.name, "ماه کامل")
-        XCTAssertEqual(moon.age, 15)
-    }
-
-    func testNamesForAllEightPhases() {
-        for (index, name) in MoonPhase.names.enumerated() {
-            let moon = phase(afterDays: MoonPhase.synodic * Double(index) / 8)
-            XCTAssertEqual(moon.name, name)
+    func testIlluminationAtEvents() {
+        for event in UsnoMoonEvents.all {
+            let at = computed(code: event.code, near: UsnoMoonEvents.date(event.utc)).addingTimeInterval(1)
+            let value = MoonPhase(date: at).illumination
+            switch event.code {
+            case "n": XCTAssertLessThan(value, 0.001)
+            case "u": XCTAssertGreaterThan(value, 0.999)
+            default: XCTAssertEqual(value, 0.5, accuracy: 0.01)
+            }
         }
-        XCTAssertEqual(Set(MoonPhase.names).count, 8)
     }
 
-    func testNamesAtKnownDates() {
-        XCTAssertEqual(phase(afterDays: 7.4).name, "تربیع اول")
-        XCTAssertEqual(phase(afterDays: 22.1).name, "تربیع آخر")
-        XCTAssertEqual(phase(afterDays: 3.7).name, "هلال فزاینده")
-        XCTAssertEqual(phase(afterDays: 11.1).name, "بدر فزاینده")
-        XCTAssertEqual(phase(afterDays: 18.4).name, "بدر کاهنده")
-        XCTAssertEqual(phase(afterDays: 25.8).name, "هلال کاهنده")
+    func testNamesAtEvents() {
+        let names = ["n": "ماه نو", "f": "تربیع اول", "u": "ماه کامل", "l": "تربیع آخر"]
+        for event in UsnoMoonEvents.all {
+            let at = computed(code: event.code, near: UsnoMoonEvents.date(event.utc))
+            XCTAssertEqual(MoonPhase(date: at.addingTimeInterval(1)).name, names[event.code], event.utc)
+            XCTAssertEqual(MoonPhase(date: at.addingTimeInterval(-3600)).name, names[event.code], event.utc)
+        }
     }
 
-    func testJustBeforeNextNewMoonWrapsToNewMoon() {
-        let moon = phase(afterDays: MoonPhase.synodic - 0.2)
-        XCTAssertEqual(moon.name, "ماه نو")
-        XCTAssertTrue(moon.fraction > 0.99)
+    func testReferenceNewMoonOfJanuary2000() {
+        let expected = UsnoMoonEvents.date("2000-01-06 18:14")
+        let actual = LunarEvents.date(k: 0)
+        XCTAssertEqual(actual.timeIntervalSince(expected), 0, accuracy: 180)
     }
 
-    func testCycleRepeatsEverySynodicMonth() {
-        let first = phase(afterDays: 5)
-        let second = phase(afterDays: 5 + MoonPhase.synodic * 12)
-        XCTAssertEqual(first.fraction, second.fraction, accuracy: 1e-6)
+    func testAgeCountsDaysSinceTheTrueNewMoon() {
+        let newMoon = UsnoMoonEvents.date("2026-10-10 15:50")
+        XCTAssertEqual(MoonPhase(date: newMoon.addingTimeInterval(3600)).age, 0)
+        XCTAssertEqual(MoonPhase(date: newMoon.addingTimeInterval(86400 * 7.4)).age, 7)
+        let full = UsnoMoonEvents.date("2026-10-26 04:12")
+        XCTAssertEqual(MoonPhase(date: full).age, 16)
+    }
+
+    func testAgeNeverExceedsTheMaximum() {
+        var date = UsnoMoonEvents.date("2026-01-01 00:00")
+        for _ in 0..<800 {
+            XCTAssertLessThanOrEqual(MoonPhase(date: date).age, MoonPhase.maxAge)
+            date = date.addingTimeInterval(86400 / 3)
+        }
+    }
+
+    func testFractionStaysInUnitRangeAndIsMonotonicWithinACycle() {
+        var date = UsnoMoonEvents.date("2026-03-01 00:00")
+        var previous = MoonPhase(date: date).fraction
+        for _ in 0..<400 {
+            date = date.addingTimeInterval(3600 * 3)
+            let value = MoonPhase(date: date).fraction
+            XCTAssertTrue(value >= 0 && value < 1)
+            XCTAssertTrue(value > previous || previous > 0.9, "\(date)")
+            previous = value
+        }
     }
 
     func testIlluminationRisesThenFalls() {
-        XCTAssertTrue(phase(afterDays: 3).illumination < phase(afterDays: 7).illumination)
-        XCTAssertTrue(phase(afterDays: 12).illumination < phase(afterDays: 14.7).illumination)
-        XCTAssertTrue(phase(afterDays: 18).illumination > phase(afterDays: 25).illumination)
+        let newMoon = UsnoMoonEvents.date("2026-10-10 15:50")
+        func illumination(_ days: Double) -> Double { MoonPhase(date: newMoon.addingTimeInterval(days * 86400)).illumination }
+        XCTAssertLessThan(illumination(3), illumination(7))
+        XCTAssertLessThan(illumination(12), illumination(15.2))
+        XCTAssertGreaterThan(illumination(18), illumination(25))
     }
 
-    func testDatesBeforeTheReferenceStillWork() {
-        let moon = phase(afterDays: -MoonPhase.synodic / 2)
-        XCTAssertEqual(moon.fraction, 0.5, accuracy: 1e-6)
-        XCTAssertEqual(moon.name, "ماه کامل")
+    func testNamesAreEightDistinctPhases() {
+        XCTAssertEqual(Set(MoonPhase.names).count, 8)
+    }
+
+    func testDatesFarFromTodayStillWork() {
+        for text in ["1999-06-01 00:00", "2040-06-01 00:00", "2100-01-01 00:00"] {
+            let moon = MoonPhase(date: UsnoMoonEvents.date(text))
+            XCTAssertTrue(moon.fraction >= 0 && moon.fraction < 1)
+            XCTAssertTrue(moon.illumination >= 0 && moon.illumination <= 1)
+        }
     }
 }

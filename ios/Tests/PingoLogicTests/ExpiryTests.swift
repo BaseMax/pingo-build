@@ -26,10 +26,28 @@ final class ExpiryTests: XCTestCase {
         }
     }
 
-    func testExpiredMessageTellsToConnectAndRun() {
+    func testExpiredMessageTellsToReinstallAndKeepsData() {
         let message = status(-60).message
-        XCTAssertTrue(message.contains("وصل"))
-        XCTAssertTrue(message.contains("Run"))
+        XCTAssertTrue(message.contains("Sideloadly"))
+        XCTAssertTrue(message.contains("Impactor"))
+        XCTAssertTrue(message.contains("اطلاعاتت می‌مونه"))
+    }
+
+    func testNoCopyMentionsXcodeOrRun() {
+        let copies = [status(-60).message, status(day).message, status(5 * day).message, Expiry.status(expiry: nil, now: now).message,
+                      ExpiryCopy.reminderBody, ExpiryCopy.renewalRule, ExpiryCopy.reminderHint]
+        for copy in copies {
+            XCTAssertFalse(copy.contains("Xcode"), copy)
+            XCTAssertFalse(copy.contains("Run"), copy)
+        }
+    }
+
+    func testReminderHintNamesBothNotifications() {
+        let hint = ExpiryCopy.reminderHint
+        XCTAssertTrue(hint.contains("دو اعلان"))
+        XCTAssertTrue(hint.contains("۲۴"))
+        XCTAssertTrue(hint.contains("۳"))
+        XCTAssertEqual(Expiry.reminderLeads, [86400, 10800] as [TimeInterval])
     }
 
     func testSoonWhenTwoDaysOrLess() {

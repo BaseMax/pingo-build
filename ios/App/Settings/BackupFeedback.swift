@@ -4,10 +4,16 @@ enum BackupFeedback: Equatable {
     case exported
     case restored(Int)
     case failed(String)
+    case exporting
+    case restoring
 
     var isError: Bool {
         if case .failed = self { return true }
         return false
+    }
+
+    var isWorking: Bool {
+        self == .exporting || self == .restoring
     }
 
     var symbol: String {
@@ -15,7 +21,8 @@ enum BackupFeedback: Equatable {
     }
 
     var color: Color {
-        isError ? Color.red : Color.leaf
+        if isWorking { return Color.ocean }
+        return isError ? Color.red : Color.leaf
     }
 
     var message: String {
@@ -23,6 +30,8 @@ enum BackupFeedback: Equatable {
         case .exported: "نسخه پشتیبان ذخیره شد."
         case .restored(let count): "نسخه پشتیبان برگشت و \(Persian.number(count)) مورد جایگزین شد."
         case .failed(let reason): reason
+        case .exporting: "دارم نسخه پشتیبان رو آماده می‌کنم. چند لحظه صبر کن."
+        case .restoring: "دارم نسخه پشتیبان رو برمی‌گردونم. چند لحظه صبر کن."
         }
     }
 
@@ -42,9 +51,7 @@ struct BackupBanner: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: feedback.symbol)
-                .font(.system(size: 16, weight: .semibold))
-                .symbolEffect(.bounce, value: feedback)
+            indicator
             Text(feedback.message)
                 .dasto(14)
                 .lineSpacing(3)
@@ -53,5 +60,16 @@ struct BackupBanner: View {
         .foregroundStyle(feedback.color)
         .padding(12)
         .background(feedback.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var indicator: some View {
+        if feedback.isWorking {
+            ProgressView().tint(feedback.color)
+        } else {
+            Image(systemName: feedback.symbol)
+                .font(.system(size: 16, weight: .semibold))
+                .symbolEffect(.bounce, value: feedback)
+        }
     }
 }

@@ -1,7 +1,11 @@
 import Foundation
 
 enum DayKey {
-    private static let calendar = Calendar(identifier: .gregorian)
+    private static let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .autoupdatingCurrent
+        return calendar
+    }()
 
     static func string(_ date: Date) -> String {
         let parts = calendar.dateComponents([.year, .month, .day], from: date)

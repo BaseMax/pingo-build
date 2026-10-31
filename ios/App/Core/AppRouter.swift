@@ -18,6 +18,7 @@ final class AppRouter {
     var libraryPath = NavigationPath()
     var sheet: AppSheet?
     var libraryFilter: LibraryKind?
+    var addMenuOpen = false
 
     func open(_ route: Route) {
         switch route {
@@ -32,6 +33,15 @@ final class AppRouter {
     func handle(_ url: URL) {
         guard let route = Route(url: url) else { return }
         open(route)
+    }
+
+    func createItem(_ kind: LibraryKind) {
+        if let filter = libraryFilter, filter != kind {
+            libraryFilter = nil
+        }
+        let id = Store.create(kind)
+        Haptics.success()
+        libraryPath.append(ItemRoute(kind: kind, id: id))
     }
 
     private func openKind(_ kind: PingoKind) {

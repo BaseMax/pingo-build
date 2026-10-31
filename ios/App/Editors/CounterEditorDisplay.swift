@@ -1,18 +1,11 @@
 import Foundation
 
 extension CounterItem {
-    var shownCount: Int {
-        dailyReset ? count(on: .now) : total
-    }
+    var shownCount: Int { shownCount(on: .now) }
 
-    var shownProgress: Double {
-        guard goal > 0 else { return 0 }
-        return min(Double(shownCount) / Double(goal), 1)
-    }
+    var shownProgress: Double { shownProgress(on: .now) }
 
-    var reachedShownGoal: Bool {
-        goal > 0 && shownCount >= goal
-    }
+    var reachedShownGoal: Bool { reachedShownGoal(on: .now) }
 }
 
 struct CounterDay: Identifiable {

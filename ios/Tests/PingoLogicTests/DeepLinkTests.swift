@@ -81,4 +81,25 @@ final class DeepLinkTests: XCTestCase {
         XCTAssertNil(Route(url: url("pingo://library/note/extra")))
         XCTAssertNil(Route(url: url("pingo://guide/date/extra")))
     }
+
+    func testAcceptsTrailingSlashes() {
+        XCTAssertEqual(Route(url: url("pingo://settings/")), .settings)
+        XCTAssertEqual(Route(url: url("pingo://library/")), .library(nil))
+        XCTAssertEqual(Route(url: url("pingo://kind/moon/")), .kind(.moon))
+        XCTAssertEqual(Route(url: url("pingo://item/note/42/")), .item(ItemRoute(kind: .note, id: "42")))
+        XCTAssertEqual(Route(url: url("pingo://guide/")), .guide(nil))
+    }
+
+    func testAcceptsUpperCaseHostsAndScheme() {
+        XCTAssertEqual(Route(url: url("pingo://SETTINGS")), .settings)
+        XCTAssertEqual(Route(url: url("pingo://Kind/moon")), .kind(.moon))
+        XCTAssertEqual(Route(url: url("PINGO://library/todo")), .library(.todo))
+    }
+
+    func testTrailingSlashDoesNotMakeBrokenURLsValid() {
+        XCTAssertNil(Route(url: url("pingo://kind/")))
+        XCTAssertNil(Route(url: url("pingo://item/note/")))
+        XCTAssertNil(Route(url: url("pingo://item/note//")))
+        XCTAssertNil(Route(url: url("pingo://settings//")))
+    }
 }

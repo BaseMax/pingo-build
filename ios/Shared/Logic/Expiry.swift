@@ -49,10 +49,10 @@ enum Expiry {
 
     static func status(expiry: Date?, now: Date) -> ExpiryStatus {
         guard let expiry else {
-            return ExpiryStatus(level: .unknown, daysLeft: 0, fractionLeft: 0, message: "زمان اعتبار نصب پینگو مشخص نیست. اگه از Xcode نصبش کردی، هر چند روز یه بار دوباره Run بزن.")
+            return ExpiryStatus(level: .unknown, daysLeft: 0, fractionLeft: 0, message: ExpiryCopy.unknown)
         }
         guard expiry > now else {
-            return ExpiryStatus(level: .expired, daysLeft: 0, fractionLeft: 0, message: "اعتبار نصب تموم شده. گوشی رو به کامپیوتر وصل کن و توی Xcode دکمه Run رو بزن تا دوباره زنده بشه.")
+            return ExpiryStatus(level: .expired, daysLeft: 0, fractionLeft: 0, message: ExpiryCopy.expired)
         }
         let remaining = expiry.timeIntervalSince(now)
         let days = max(Int((remaining / 86400).rounded(.up)), 0)
@@ -72,7 +72,7 @@ enum Expiry {
     private static func message(level: ExpiryLevel, days: Int) -> String {
         let span = days == 1 ? "یک روز" : Persian.number(days) + " روز"
         switch level {
-        case .soon: return "فقط \(span) دیگه مونده. زودتر گوشی رو وصل کن و توی Xcode دکمه Run رو بزن."
+        case .soon: return ExpiryCopy.soon(span: span)
         default: return "نصب پینگو تا \(span) دیگه اعتبار داره. همه‌چیز آماده‌ست."
         }
     }

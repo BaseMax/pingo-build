@@ -101,4 +101,28 @@ final class CounterMathTests: XCTestCase {
         XCTAssertEqual(history.map(\.count), [0, 2, 0, 7])
         XCTAssertTrue(counter.history(0, asOf: .now).isEmpty)
     }
+
+    func testShownValuesFollowDailyReset() {
+        let today = gregorian(2025, 5, 4)
+        let yesterday = gregorian(2025, 5, 3)
+        var counter = CounterItem(goal: 10, dailyReset: true)
+        counter.step(by: 6, on: yesterday)
+        counter.step(by: 2, on: today)
+        XCTAssertEqual(counter.shownCount(on: today), 2)
+        XCTAssertEqual(counter.shownProgress(on: today), 0.2, accuracy: 1e-9)
+        XCTAssertFalse(counter.reachedShownGoal(on: today))
+        counter.dailyReset = false
+        XCTAssertEqual(counter.shownCount(on: today), 8)
+        XCTAssertEqual(counter.shownProgress(on: today), 0.8, accuracy: 1e-9)
+        counter.step(by: 5, on: today)
+        XCTAssertTrue(counter.reachedShownGoal(on: today))
+        XCTAssertEqual(counter.shownProgress(on: today), 1, accuracy: 1e-9)
+    }
+
+    func testShownProgressWithoutGoalIsZero() {
+        var counter = CounterItem(goal: 0, dailyReset: false)
+        counter.step(by: 3, on: gregorian(2025, 5, 4))
+        XCTAssertEqual(counter.shownProgress(on: gregorian(2025, 5, 4)), 0)
+        XCTAssertFalse(counter.reachedShownGoal(on: gregorian(2025, 5, 4)))
+    }
 }

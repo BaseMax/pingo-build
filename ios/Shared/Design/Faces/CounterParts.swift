@@ -24,11 +24,11 @@ struct CounterCenter: View {
     let date: Date
     let palette: FacePalette
 
-    private var reached: Bool { item.reachedGoal(on: date) }
+    private var reached: Bool { item.reachedShownGoal(on: date) }
 
     var body: some View {
         VStack(spacing: 0) {
-            Text(Persian.number(item.count(on: date)))
+            Text(Persian.number(item.shownCount(on: date)))
                 .dasto(26)
                 .foregroundStyle(reached ? palette.accent : palette.ink)
                 .contentTransition(.numericText())
@@ -60,7 +60,7 @@ struct CounterGlyph: View {
     let palette: FacePalette
 
     var body: some View {
-        Image(systemName: item.reachedGoal(on: date) ? "checkmark" : item.symbol)
+        Image(systemName: item.reachedShownGoal(on: date) ? "checkmark" : item.symbol)
             .font(.system(size: 30, weight: .semibold))
             .foregroundStyle(palette.accent)
             .faceAccent()

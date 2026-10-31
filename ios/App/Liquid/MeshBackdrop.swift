@@ -1,26 +1,39 @@
 import SwiftUI
 
 struct MeshBackdrop: View {
+    private let isLive: Bool
+
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.animates) private var animates
 
-    init() {}
+    init(isLive: Bool = true) {
+        self.isLive = isLive
+    }
+
+    private var veil: Double {
+        colorScheme == .light && contrast == .standard ? 0.2 : 0.55
+    }
+
+    private var drifts: Bool {
+        !reduceMotion && !PowerState.shared.isLowPower
+    }
 
     var body: some View {
         mesh
-            .overlay(Color(.systemBackground).opacity(0.55))
+            .overlay(Color(.systemBackground).opacity(veil))
             .ignoresSafeArea()
     }
 
     @ViewBuilder
     private var mesh: some View {
-        if reduceMotion {
-            gradient(at: 0)
-        } else {
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !animates)) { context in
+        if drifts {
+            TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: !(isLive && animates))) { context in
                 gradient(at: context.date.timeIntervalSinceReferenceDate)
             }
+        } else {
+            gradient(at: 0)
         }
     }
 

@@ -14,6 +14,19 @@ extension CounterItem {
         goal > 0 && count(on: date) >= goal
     }
 
+    func shownCount(on date: Date) -> Int {
+        dailyReset ? count(on: date) : total
+    }
+
+    func shownProgress(on date: Date) -> Double {
+        guard goal > 0 else { return 0 }
+        return min(max(Double(shownCount(on: date)) / Double(goal), 0), 1)
+    }
+
+    func reachedShownGoal(on date: Date) -> Bool {
+        goal > 0 && shownCount(on: date) >= goal
+    }
+
     var total: Int {
         counts.values.reduce(0, +)
     }

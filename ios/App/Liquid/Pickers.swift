@@ -27,6 +27,8 @@ private struct SwatchButton<Face: View>: View {
         }
         .buttonStyle(Pressable())
         .animation(.liquid, value: isSelected)
+        .accessibilityLabel(caption)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var swatch: some View {
@@ -139,8 +141,8 @@ struct SymbolPickerRow: View {
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 10)], spacing: 10) {
-            ForEach(symbols, id: \.self) { symbol in
-                SymbolChoice(symbol: symbol, isSelected: selection == symbol) {
+            ForEach(Array(symbols.enumerated()), id: \.element) { index, symbol in
+                SymbolChoice(symbol: symbol, label: "نماد " + Persian.number(index + 1), isSelected: selection == symbol) {
                     selection = symbol
                 }
             }
@@ -151,6 +153,7 @@ struct SymbolPickerRow: View {
 
 private struct SymbolChoice: View {
     let symbol: String
+    let label: String
     let isSelected: Bool
     let action: () -> Void
 
@@ -173,6 +176,8 @@ private struct SymbolChoice: View {
         }
         .buttonStyle(Pressable())
         .animation(.liquidSnap, value: isSelected)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

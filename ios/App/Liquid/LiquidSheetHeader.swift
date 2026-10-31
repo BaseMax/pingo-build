@@ -33,7 +33,7 @@ struct LiquidSheetHeader: View {
                 .frame(width: 38, height: 38)
                 .glassCircle(interactive: true)
         }
-        .buttonStyle(Pressable())
+        .glassButtonStyle()
         .accessibilityLabel("بستن")
     }
 }

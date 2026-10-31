@@ -10,39 +10,26 @@ struct FloatingAction: Identifiable {
 
 struct FloatingAddMenu: View {
     private let actions: [FloatingAction]
-    @State private var isOpen = false
+    @Binding private var isOpen: Bool
     @Namespace private var space
+    @Environment(\.scenePhase) private var scenePhase
 
-    init(actions: [FloatingAction]) {
+    init(actions: [FloatingAction], isOpen: Binding<Bool>) {
         self.actions = actions
+        _isOpen = isOpen
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            if isOpen {
-                scrim
+        menu
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .animation(.liquid, value: isOpen)
+            .onChange(of: scenePhase) { _, phase in
+                if phase != .active { close() }
             }
-            menu
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-        .animation(.liquid, value: isOpen)
-    }
-
-    private var scrim: some View {
-        ZStack {
-            Color.black.opacity(0.18)
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .opacity(0.6)
-        }
-        .ignoresSafeArea()
-        .contentShape(Rectangle())
-        .onTapGesture(perform: close)
-        .transition(.opacity)
     }
 
     private var menu: some View {
-        GlassGroup(spacing: 14) {
+        GlassGroup(spacing: 8) {
             VStack(alignment: .trailing, spacing: 12) {
                 if isOpen {
                     ForEach(Array(actions.enumerated()), id: \.element.id) { pair in
@@ -66,7 +53,7 @@ struct FloatingAddMenu: View {
                 .glassCircle(tint: Color.signal, interactive: true)
                 .glassID("add", in: space)
         }
-        .buttonStyle(Pressable())
+        .glassButtonStyle()
         .accessibilityLabel(isOpen ? "بستن" : "افزودن")
     }
 
@@ -90,7 +77,7 @@ struct FloatingAddMenu: View {
             .glassCapsule(interactive: true)
             .glassID(action.id, in: space)
         }
-        .buttonStyle(Pressable())
+        .glassButtonStyle()
         .transition(pillTransition(delay: delay))
     }
 
