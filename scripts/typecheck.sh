@@ -5,11 +5,12 @@ mode="${1:-all}"
 filter="${2:-.}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 tc="$root/scripts/typecheck"
+stubs_dir="${TC_STUBS:-$tc/stubs}"
 build="${TC_BUILD:-${TMPDIR:-/tmp}/pingo-typecheck-build}"
 image="${PINGO_SWIFT_IMAGE:-swift:6.2}"
 limits="--rm -i --cpus 2 --memory 3g"
 order="$(python3 "$tc/gen.py" order)"
-digest="$(find "$tc/stubs" -name '*.swift' | sort | xargs cat | sha1sum | cut -c1-12)-$(echo "$image" | tr ':/' '__')"
+digest="$(find "$stubs_dir" -name '*.swift' | sort | xargs cat | sha1sum | cut -c1-12)-$(echo "$image" | tr ':/' '__')"
 modules="$build/$digest"
 mkdir -p "$build"
 
@@ -17,7 +18,7 @@ stub_script='
 mkdir -p /w/out && tar x -C /w && cd /w
 for module in $ORDER; do
   files="$(ls stubs/$module/*.swift 2>/dev/null)"
-  [ -z "$files" ] && continue
+  [ -z "$files" ] && : > /tmp/empty_$module.swift && files=/tmp/empty_$module.swift
   swiftc -emit-module -parse-as-library -swift-version 5 -module-name $module -I out -o out/$module.swiftmodule \
     -Xfrontend -experimental-skip-non-inlinable-function-bodies-without-types $files 2>&1 \
     | grep -E "^[^ ]+:[0-9]+:[0-9]+: (error|warning):" | sed "s#^#[$module] #" >&2
@@ -43,7 +44,7 @@ done
 build_modules() {
   local staging="$modules.partial"
   rm -f "$staging.tar" "$staging.log"
-  tar c -C "$tc" stubs | docker run $limits -e ORDER="$order" "$image" bash -c "$stub_script" > "$staging.tar" 2> "$staging.log"
+  tar c -C "$(dirname "$stubs_dir")" --transform "s,^$(basename "$stubs_dir"),stubs," "$(basename "$stubs_dir")" | docker run $limits -e ORDER="$order" "$image" bash -c "$stub_script" > "$staging.tar" 2> "$staging.log"
   if [ -s "$staging.log" ]; then
     sed 's#^\[\([A-Za-z]*\)\] #\1 stub: #' "$staging.log" | sort -u
     echo "stub modules have diagnostics, see $staging.log" >&2
