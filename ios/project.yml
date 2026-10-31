@@ -86,12 +86,31 @@ targets:
         com.apple.security.application-groups:
           - $(PINGO_GROUP)
 
+  PingoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    settings:
+      groups:
+        - phone
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(PINGO_BUNDLE).uitests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Pingo
+
 schemes:
   Pingo:
     build:
       targets:
         Pingo: all
         PingoWidgets: all
+        PingoUITests: [test]
+    test:
+      config: Release
+      targets:
+        - PingoUITests
     run:
       config: Release
     archive:

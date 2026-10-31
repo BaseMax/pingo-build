@@ -1,0 +1,84 @@
+name: smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      OUT: ${{ github.workspace }}/out/smoke
+      SMOKE_DIR: /tmp/pingo-smoke
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode
+        run: |
+          latest="$(printf '%s\n' /Applications/Xcode_*.app | grep -vi 'beta' | sort -V | tail -1)"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Fetch font
+        env:
+          FONT_B64_1: ${{ secrets.FONT_B64_1 }}
+          FONT_B64_2: ${{ secrets.FONT_B64_2 }}
+        run: ./scripts/fetch-font.sh
+
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate --spec project.yml
+
+      - name: Run smoke tests
+        timeout-minutes: 36
+        run: ./scripts/smoke-run.sh "$OUT"
+
+      - name: Collect results
+        if: always()
+        run: ./scripts/smoke-collect.sh "$OUT"
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshots
+          path: |
+            out/smoke/shots
+            out/smoke/attachments
+          if-no-files-found: ignore
+
+      - name: Upload result bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-xcresult
+          path: out/smoke/Smoke.xcresult
+          if-no-files-found: ignore
+
+      - name: Upload crash reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-crash-reports
+          path: out/smoke/crash-reports
+          if-no-files-found: ignore
+
+      - name: Upload logs and video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs
+          path: |
+            out/smoke/test.log
+            out/smoke/export.log
+          if-no-files-found: ignore
