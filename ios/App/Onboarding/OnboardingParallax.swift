@@ -12,17 +12,23 @@ private struct PageParallax: ViewModifier {
     let depth: CGFloat
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    private var direction: CGFloat {
+        layoutDirection == .rightToLeft ? -1 : 1
+    }
 
     func body(content: Content) -> some View {
         if reduceMotion {
             content
         } else {
+            let flip = direction
             content.scrollTransition(.interactive, axis: .horizontal) { view, phase in
                 view
                     .opacity(Double(1 - away(phase) * 0.9))
                     .blur(radius: away(phase) * 14)
                     .scaleEffect(1 - away(phase) * 0.08)
-                    .offset(x: distance(phase) * 90 * depth)
+                    .offset(x: distance(phase) * 90 * depth * flip)
             }
         }
     }

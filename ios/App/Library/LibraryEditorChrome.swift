@@ -8,6 +8,7 @@ private struct LibraryEditorChrome<Item: LibraryEntry>: ViewModifier {
 
     @Environment(\.dismiss) private var dismiss
     @State private var confirming = false
+    @State private var synced: Item?
 
     func body(content: Content) -> some View {
         content
@@ -24,6 +25,9 @@ private struct LibraryEditorChrome<Item: LibraryEntry>: ViewModifier {
                 Text("بعدش دیگه برنمی‌گرده.")
             }
             .onChange(of: draft) { _, value in write(value) }
+            .onReceive(NotificationCenter.default.publisher(for: .pingoStoreChanged)) { _ in
+                pull()
+            }
             .reloadsOnActive { load() }
     }
 
@@ -43,20 +47,33 @@ private struct LibraryEditorChrome<Item: LibraryEntry>: ViewModifier {
             dismiss()
             return
         }
+        adopt(stored)
+    }
+
+    private func pull() {
+        guard draft == synced else { return }
+        load()
+    }
+
+    private func adopt(_ stored: Item) {
+        synced = stored
         if draft != stored {
             draft = stored
         }
     }
 
     private func write(_ value: Item?) {
-        guard let value, store.item(id) != value else { return }
+        guard let value else { return }
+        synced = value
+        guard store.item(id) != value else { return }
         store.update(id) { $0 = value }
     }
 
     private func delete() {
+        synced = nil
         draft?.cleanUp()
-        store.remove(id)
         dismiss()
+        store.remove(id)
     }
 }
 

@@ -34,7 +34,6 @@ struct LibraryView: View {
         }
         .animation(.liquid, value: isEmpty)
         .liquidScreen()
-        .overlay { FloatingAddMenu(actions: actions) }
         .reloadsOnActive { collections.reloadAll() }
     }
 
@@ -45,17 +44,9 @@ struct LibraryView: View {
             title: router.libraryFilter.map { $0.plural + " خالیه" } ?? "کتابخانه‌ت خالیه",
             message: "هر چی ویجت‌هات نشون می‌دن اینجا جمع می‌شه. یکی بساز تا شروع کنیم.",
             actionTitle: kind.title + " جدید",
-            action: { create(kind) }
+            action: { router.createItem(kind) }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var actions: [FloatingAction] {
-        LibraryKind.allCases.map { kind in
-            FloatingAction(id: kind.rawValue, title: kind.title, symbol: kind.symbol, tint: kind.libraryTint) {
-                create(kind)
-            }
-        }
     }
 
     @ToolbarContentBuilder
@@ -70,15 +61,6 @@ struct LibraryView: View {
                 LibraryEditButton(editMode: $editMode)
             }
         }
-    }
-
-    private func create(_ kind: LibraryKind) {
-        if let filter = router.libraryFilter, filter != kind {
-            router.libraryFilter = nil
-        }
-        let route = collections.create(kind)
-        Haptics.success()
-        router.libraryPath.append(route)
     }
 
     private func showAll() {

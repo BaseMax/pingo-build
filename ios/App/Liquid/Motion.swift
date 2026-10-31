@@ -1,17 +1,35 @@
 import SwiftUI
+import UIKit
 
 extension Animation {
-    static var liquid: Animation { .spring(duration: 0.55, bounce: 0.28) }
-    static var liquidSoft: Animation { .smooth(duration: 0.8) }
-    static var liquidSnap: Animation { .snappy(duration: 0.35) }
-    static var liquidStretch: Animation { .spring(duration: 0.7, bounce: 0.5) }
-    fileprivate static var reducedFade: Animation { .easeOut(duration: 0.18) }
+    static var liquid: Animation { motion(.spring(duration: 0.55, bounce: 0.28)) }
+    static var liquidSoft: Animation { motion(.smooth(duration: 0.8)) }
+    static var liquidSnap: Animation { motion(.snappy(duration: 0.35)) }
+    static var liquidStretch: Animation { motion(.spring(duration: 0.7, bounce: 0.5)) }
+    static var reducedFade: Animation { .easeOut(duration: 0.18) }
+
+    private static func motion(_ animation: Animation) -> Animation {
+        UIAccessibility.isReduceMotionEnabled ? reducedFade : animation
+    }
+}
+
+private struct SoftenMotion: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content.transaction { transaction in
+            guard reduceMotion, transaction.animation != nil else { return }
+            transaction.animation = Animation.reducedFade
+        }
+    }
 }
 
 struct BlurFade: ViewModifier {
     let hidden: Bool
     let radius: CGFloat
     let scale: CGFloat
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(hidden: Bool, radius: CGFloat = 14, scale: CGFloat = 0.97) {
         self.hidden = hidden
@@ -22,8 +40,8 @@ struct BlurFade: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(hidden ? 0 : 1)
-            .blur(radius: hidden ? radius : 0)
-            .scaleEffect(hidden ? scale : 1)
+            .blur(radius: hidden && !reduceMotion ? radius : 0)
+            .scaleEffect(hidden && !reduceMotion ? scale : 1)
     }
 }
 
@@ -103,6 +121,10 @@ private struct RubberBand: ViewModifier {
 }
 
 extension View {
+    func softensMotion() -> some View {
+        modifier(SoftenMotion())
+    }
+
     func reveal(_ delay: Double = 0) -> some View {
         modifier(Reveal(delay: delay))
     }

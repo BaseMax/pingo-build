@@ -18,21 +18,39 @@ struct AppContent: View {
     private var needsOnboarding: Bool { !settings.value.onboarded }
 
     var body: some View {
+        ZStack {
+            root
+            onboarding
+        }
+        .animation(.liquid, value: needsOnboarding)
+        .environment(router)
+        .environment(\.layoutDirection, .rightToLeft)
+        .environment(\.locale, Persian.locale)
+        .environment(\.animates, true)
+        .tint(Color.signal)
+        .preferredColorScheme(scheme)
+        .softensMotion()
+        .onOpenURL { router.handle($0) }
+        .sheet(item: $router.sheet) { guide(for: $0) }
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            if phase == .active { activate() }
+        }
+    }
+
+    private var root: some View {
         RootView()
-            .environment(router)
-            .environment(\.layoutDirection, .rightToLeft)
-            .environment(\.locale, Persian.locale)
-            .environment(\.animates, true)
-            .tint(Color.signal)
-            .preferredColorScheme(scheme)
-            .onOpenURL { router.handle($0) }
-            .sheet(item: $router.sheet) { guide(for: $0) }
-            .fullScreenCover(isPresented: .constant(needsOnboarding)) {
-                OnboardingView(onFinish: finishOnboarding)
-            }
-            .onChange(of: scenePhase, initial: true) { _, phase in
-                if phase == .active { activate() }
-            }
+            .environment(\.animates, !needsOnboarding)
+            .allowsHitTesting(!needsOnboarding)
+            .accessibilityHidden(needsOnboarding)
+    }
+
+    @ViewBuilder
+    private var onboarding: some View {
+        if needsOnboarding {
+            OnboardingView(onFinish: finishOnboarding)
+                .transition(.blurFade)
+                .zIndex(10)
+        }
     }
 
     @ViewBuilder
@@ -47,11 +65,18 @@ struct AppContent: View {
 
     private func activate() {
         settings.reload()
-        Task { await ReminderScheduler.refresh() }
+        let ready = !needsOnboarding
+        Task {
+            if ready {
+                await ReminderScheduler.prepare()
+            } else {
+                await ReminderScheduler.refresh()
+            }
+        }
     }
 
     private func finishOnboarding() {
         settings.value.onboarded = true
-        Task { await ReminderScheduler.refresh() }
+        Task { await ReminderScheduler.prepare() }
     }
 }

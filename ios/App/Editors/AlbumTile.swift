@@ -49,7 +49,7 @@ struct AlbumTile: View {
                 .frame(width: 28, height: 28)
                 .glassCircle(interactive: true)
         }
-        .buttonStyle(Pressable())
+        .glassButtonStyle()
         .accessibilityLabel("حذف عکس")
     }
 

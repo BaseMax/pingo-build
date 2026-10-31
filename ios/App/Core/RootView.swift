@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppRouter.self) private var router
+    @Environment(\.animates) private var parentAnimates
 
     private var selection: Binding<AppTab> {
         Binding(get: { router.tab }, set: { router.tab = $0 })
@@ -15,6 +16,8 @@ struct RootView: View {
             LiquidDock(selection: selection)
                 .ignoresSafeArea(.keyboard, edges: .bottom)
                 .zIndex(2)
+            LibraryAddLayer()
+                .zIndex(3)
         }
     }
 
@@ -24,7 +27,7 @@ struct RootView: View {
             .modifier(BlurFade(hidden: !isActive))
             .allowsHitTesting(isActive)
             .accessibilityHidden(!isActive)
-            .environment(\.animates, isActive)
+            .environment(\.animates, isActive && parentAnimates)
             .animation(.liquid, value: isActive)
             .zIndex(isActive ? 1 : 0)
     }

@@ -13,6 +13,10 @@ extension View {
         glass(Circle(), tint: tint, interactive: interactive)
     }
 
+    func glassButtonStyle() -> some View {
+        modifier(GlassButtonStyle())
+    }
+
     func glassID<ID: Hashable & Sendable>(_ id: ID, in namespace: Namespace.ID) -> some View {
         modifier(GlassIdentity(id: id, namespace: namespace))
     }
@@ -66,6 +70,16 @@ private struct GlassSurface<S: Shape>: ViewModifier {
         #else
         content.modifier(MaterialSurface(shape: shape, tint: tint))
         #endif
+    }
+}
+
+private struct GlassButtonStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        if SystemGlass.isActive {
+            content.buttonStyle(.plain)
+        } else {
+            content.buttonStyle(Pressable())
+        }
     }
 }
 

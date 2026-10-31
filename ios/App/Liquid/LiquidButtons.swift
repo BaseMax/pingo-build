@@ -16,27 +16,38 @@ struct LiquidButtonStyle: ButtonStyle {
     }
 
     func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
-        return surface(
-            configuration.label
-                .dasto(16)
-                .foregroundStyle(prominent ? Color.white : Color.primary)
-                .blur(radius: pressed ? 1.2 : 0)
-        )
-        .scaleEffect(pressed ? 0.94 : 1)
-        .animation(Animation.liquid, value: pressed)
-        .onChange(of: pressed) { _, isDown in
-            if isDown {
-                Haptics.soft()
-            }
-        }
+        LiquidButtonBody(configuration: configuration, prominent: prominent, tint: tint, isCircle: isCircle)
     }
+}
+
+private struct LiquidButtonBody: View {
+    let configuration: ButtonStyleConfiguration
+    let prominent: Bool
+    let tint: Color?
+    let isCircle: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var glassTint: Color? {
         if prominent {
             return tint ?? Color.signal
         }
         return tint
+    }
+
+    private var pressedLook: Bool {
+        configuration.isPressed && !SystemGlass.isActive && !reduceMotion
+    }
+
+    var body: some View {
+        surface(
+            configuration.label
+                .dasto(16)
+                .foregroundStyle(prominent ? Color.white : Color.primary)
+                .blur(radius: pressedLook ? 1.2 : 0)
+        )
+        .scaleEffect(pressedLook ? 0.94 : 1)
+        .animation(Animation.liquid, value: pressedLook)
     }
 
     @ViewBuilder
@@ -90,14 +101,16 @@ struct ToolbarIconButton: View {
 
     var body: some View {
         if SystemGlass.isActive {
-            Button {
-                Haptics.tap()
-                action()
-            } label: {
+            Button(action: tapped) {
                 Image(systemName: symbol)
             }
         } else {
-            LiquidIconButton(symbol: symbol, action: action)
+            LiquidIconButton(symbol: symbol, action: tapped)
         }
+    }
+
+    private func tapped() {
+        Haptics.tap()
+        action()
     }
 }

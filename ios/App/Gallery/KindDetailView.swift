@@ -19,7 +19,7 @@ struct KindDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 22) {
-                stage.reveal()
+                stage
                 if kind.sizes.count > 1 {
                     LiquidSegmented(kind.sizes, selection: $size) { $0.title }.reveal(0.06)
                 }
@@ -83,6 +83,7 @@ struct KindDetailView: View {
 
     private var addButton: some View {
         Button {
+            Haptics.tap()
             router.open(.guide(kind))
         } label: {
             Label("افزودن به صفحه اصلی", systemImage: "plus.square.on.square")

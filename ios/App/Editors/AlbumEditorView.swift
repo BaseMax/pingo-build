@@ -75,6 +75,7 @@ struct AlbumEditorView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(LiquidButtonStyle(prominent: true, tint: tint))
+        .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
         .disabled(importing)
     }
 

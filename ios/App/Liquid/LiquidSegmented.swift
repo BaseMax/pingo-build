@@ -49,6 +49,7 @@ struct LiquidSegmented<Value: Hashable>: View {
         }
         .buttonStyle(.plain)
         .slideSource(item, in: space)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func select(_ item: Value) {

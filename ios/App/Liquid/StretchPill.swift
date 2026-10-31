@@ -8,7 +8,17 @@ private struct StretchValues {
 private struct Stretch<Trigger: Equatable>: ViewModifier {
     let trigger: Trigger
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func body(content: Content) -> some View {
+        if reduceMotion {
+            content
+        } else {
+            stretching(content)
+        }
+    }
+
+    private func stretching(_ content: Content) -> some View {
         content.keyframeAnimator(initialValue: StretchValues(), trigger: trigger) { view, values in
             view.scaleEffect(x: values.scaleX, y: values.scaleY)
         } keyframes: { _ in

@@ -99,7 +99,7 @@ private struct StepperButton: View {
                 .frame(width: 38, height: 38)
                 .glassCircle(interactive: true)
         }
-        .buttonStyle(Pressable())
+        .glassButtonStyle()
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.35)
         .animation(.liquidSnap, value: isEnabled)

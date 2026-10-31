@@ -8,6 +8,7 @@ protocol LibraryEntry: Codable, Hashable, Identifiable where ID == String {
     var entryTheme: Theme? { get }
     mutating func markAsCopy()
     func cleanUp()
+    func duplicatedInBackground() async -> Self
 }
 
 extension LibraryEntry {
@@ -16,6 +17,10 @@ extension LibraryEntry {
     mutating func markAsCopy() {}
 
     func cleanUp() {}
+
+    func duplicatedInBackground() async -> Self {
+        duplicated()
+    }
 
     func duplicated() -> Self {
         var copy = self

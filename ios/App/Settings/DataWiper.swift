@@ -1,8 +1,11 @@
 import Foundation
 
 enum DataWiper {
-    static func wipeAll() {
-        Store.albums.all.flatMap(\.photos).forEach { PhotoStore.remove($0) }
+    static func wipeAll() async {
+        await Task.detached(priority: .userInitiated) { wipeSync() }.value
+    }
+
+    private static func wipeSync() {
         Store.notes.save([])
         Store.countdowns.save([])
         Store.habits.save([])
@@ -12,5 +15,6 @@ enum DataWiper {
         var settings = Store.settings
         settings.seeded = true
         Store.settings = settings
+        PhotoSweeper.sweep()
     }
 }

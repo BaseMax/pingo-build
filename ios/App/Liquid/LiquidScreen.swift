@@ -1,6 +1,8 @@
 import SwiftUI
 
 private struct LiquidScreen: ViewModifier {
+    @State private var isTop = true
+
     func body(content: Content) -> some View {
         content
             .scrollContentBackground(.hidden)
@@ -9,8 +11,10 @@ private struct LiquidScreen: ViewModifier {
                 Color.clear.frame(height: Layout.dockClearance)
             }
             .background {
-                MeshBackdrop().ignoresSafeArea()
+                MeshBackdrop(isLive: isTop).ignoresSafeArea()
             }
+            .onAppear { isTop = true }
+            .onDisappear { isTop = false }
     }
 }
 
